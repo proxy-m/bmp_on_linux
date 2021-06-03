@@ -15,6 +15,10 @@
 #include <signal.h>
 #include <pthread.h>
 
+#include <stdio.h>
+#include "smmalloc.c"
+#include "strcats.h"
+
 /*--------------------------------------------------------------------------}
 {                        BITMAP FILE HEADER DEFINITION                      }
 {--------------------------------------------------------------------------*/
@@ -163,6 +167,7 @@ int main(int argc, char* argv[])
 	int fbfd = open("/dev/fb0", O_RDWR);
 	if (fbfd == -1) {
 		perror("Error: cannot open framebuffer device.\n");
+        smfreeall();
 		return(1);
 	}
 
@@ -170,6 +175,7 @@ int main(int argc, char* argv[])
 	if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo)) {
 		perror("Error reading variable information.\n");
 		close(fbfd);
+        smfreeall();
 		return(1);
 	}
 
@@ -178,9 +184,7 @@ int main(int argc, char* argv[])
 	vinfo.xres = 800;
 	vinfo.yres = 600;
 	if (ioctl(fbfd, FBIOPUT_VSCREENINFO, &vinfo)) {
-		perror("Error setting variable information.\n");
-		close(fbfd);
-		return(1);
+		strcats(_S(""), _S("Error setting variable information to: "), _S(vinfo.xres), _S("x"), _S(vinfo.yres), _S("x"), _S(vinfo.bits_per_pixel), _S("\n"));
 	}
 
 	// Get fixed screen information
@@ -188,7 +192,9 @@ int main(int argc, char* argv[])
 		perror("Error reading fixed information.\n");
 		close(fbfd);
 		return(1);
-	}
+	} else {
+		strcats(_S(""), _S("Fixed information: "), _S((void *)finfo.smem_start), _S("+"), _S((size_t)finfo.smem_len), _S("_T"), _S((int)finfo.type), _S("_LINE"), _S((int)finfo.line_length), _S("\n"));
+    }
 
 	// map fb to user mem 
 	fbp = (uint8_t*)mmap(0,
@@ -200,7 +206,7 @@ int main(int argc, char* argv[])
 
 	if ((int)fbp != -1) {
 
-		Draw_Bitmap("test.bmp", fbp);
+		Draw_Bitmap("/dev/stdin", fbp);
 
 		getchar();
 	}
@@ -212,5 +218,6 @@ int main(int argc, char* argv[])
 	// close fb file    
 	close(fbfd);
 
+    smfreeall();
 	return 0;
 }

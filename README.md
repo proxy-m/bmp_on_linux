@@ -1,2 +1,5 @@
 # bmp_on_linux
-![](https://github.com/LdB-ECM/bmp_on_linux/blob/master/20191003_235049.jpg?raw=true)
+
+# HOW TO COMPILE
+
+gcc -std=c99 main.c -o bmplinux.cmd
